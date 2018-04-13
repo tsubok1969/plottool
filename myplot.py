@@ -7,7 +7,7 @@ import datahandle as dh
 def mycontour(data, x, y, xmax=None, xmin=None, ymax=None, ymin=None, cmap='jet', title=None, xlabel=None, ylabel=None):
     X, Y = np.meshgrid(x, y)
     plt.clf()
-    plt.pcolormesh(X, Y, data, cmap=cmap)
+    plt.pcolormesh(X, Y, data, cmap=cmap, rasterized=True)
 # plt.imshow(data[::-1], aspect='auto', extent=(min(x), max(x), min(y), max(y))    
     putlabel(title, xlabel, ylabel)
     setlimit(xmin, xmax, ymin, ymax)
@@ -32,7 +32,7 @@ def ptl_hist2d(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, \
         norm = mc.LogNorm()
     else:
         norm = None
-    plt.pcolormesh(X, Y, h, cmap=cmap, norm=norm)
+    plt.pcolormesh(X, Y, h, cmap=cmap, norm=norm, rasterized=True)
     plt.colorbar()
     putlabel(title, xlabel, ylabel)
 
@@ -43,7 +43,7 @@ def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         norm = mc.LogNorm()
     else:
         norm = None
-    plt.pcolormesh(X, Y, ibex, cmap=cmap, norm=norm)
+    plt.pcolormesh(X, Y, ibex, cmap=cmap, norm=norm, rasnterized=True)
     plt.colorbar()
     putlabel(title, 'x', 'Energy')
 
