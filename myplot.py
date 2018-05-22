@@ -94,6 +94,50 @@ def make_ptl_hist2d_whole(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, yma
     X, Y, h = hist2d_mpi(htmp, job.mp)
     return (X, Y, h)
 
+def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, \
+                            rng1, rng2, endian = False, pui=False):
+# mx, my : 1 -> xp, 2 -> yp, 3 -> vx, 4 -> vy, 5 -> vz, 6 -> ke
+# (rng1, rng2) -> y-sampling range
+    htmp = {}
+    impi = 0
+    for i in range(job.mp):
+        dp = dh.ptl2D(job, time, mpi=True, proc=i, pui=pui)
+        index = np.where( (dp.yp > rng1) & (dp.yp < rng2) )
+        if dp.xp[index].size == 0:
+            continue
+        if mx == 1:
+            x = dp.xp[index]
+        elif mx == 2:
+            x = dp.yp[index]
+        elif mx == 3:
+            x = dp.vx[index]
+        elif mx == 4:
+            x = dp.vy[index]
+        elif mx == 5:
+            x = dp.vz[index]
+        elif mx == 6:
+            x = dp.ke[index]
+
+        if my == 1:
+            y = dp.xp[index]
+        elif my == 2:
+            y = dp.yp[index]
+        elif my == 3:
+            y = dp.vx[index]
+        elif my == 4:
+            y = dp.vy[index]
+        elif my == 5:
+            y = dp.vz[index]
+        elif my == 6:
+            y = dp.ke[index]
+
+        htmp[impi] = np.histogram2d(x, y, bins=[xbins, ybins], range=[[xmin,xmax],[ymin,ymax]])
+        impi += 1
+        if i%8==0:
+            print('Proc:' + str(i) + ' finished')
+    X, Y, h = hist2d_mpi(htmp, impi)
+    return (X, Y, h)
+
 def makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,pui=True,endian=False):
     xmin = 0.0
     xmax = job.nx*job.dx
