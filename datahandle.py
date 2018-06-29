@@ -49,6 +49,42 @@ class job2d:
             self.npui = int(info[0])
             self.mass = float(info[1])
 
+class fld1D():
+    def __init__(self, job, time, pui=False):
+        self.job = job
+        self.time = time * job.tu
+        self.x = np.linspace(0., self.job.dx*(self.job.nx-1), self.job.nx)
+
+        endian = job.endian
+        index = ("ex","ey","ez","by","bz","np","pl","pp")
+        file = []
+        for i in range(8):
+            f = fileinfo(job, time, index[i])
+            file.append(f)
+        self.by = read1Ddata(file[0], endian, self.job.nx)
+        self.bz = read1Ddata(file[1], endian, self.job.nx)
+        self.ex = read1Ddata(file[2], endian, self.job.nx)
+        self.ey = read1Ddata(file[3], endian, self.job.nx)
+        self.ez = read1Ddata(file[4], endian, self.job.nx)
+        self.np = read1Ddata(file[5], endian, self.job.nx)
+        self.pl = read1Ddata(file[6], endian, self.job.nx)
+        self.pp = read1Ddata(file[7], endian, self.job.nx)
+
+        bx = np.cos(np.deg2rad(job.th))
+        self.bf = 0.5*(bx**2 + self.by**2 + self.bz**2)
+        self.an = self.pp / self.pl
+        self.th = np.rad2deg(np.arccos(bx/self.bf))
+
+        if pui:
+            index = ('npui', 'ppui', 'prui')
+            file = []
+            for i in range(3):
+                f = fileinfo(job, time, index[i])
+                file.append(f)
+            self.npui = read1Ddata(file[0], endian, self.job.nx)
+            self.ppui = read1Ddata(file[1], endian, self.job.nx)
+            self.prui = read1Ddata(file[2], endian, self.job.nx)
+            
 class fld2D():
     def __init__(self,job,time,pui=False):
         self.job = job
@@ -87,35 +123,47 @@ class fld2D():
             self.ppui = read2Ddata(file[1], endian, self.job.nx, self.job.ny)
             self.prui = read2Ddata(file[2], endian, self.job.nx, self.job.ny)
 
-class ptl2D():
+class ptl1D():
     def __init__(self, job, time, mpi=False, proc=None, pui=False):
         self.job = job
         self.time = time * job.tp
         endian = job.endian
         if pui:
-            index = ('vxui','vyui','vzui','xpui','ypui')
+#            index = ('vxui','vyui','vzui','xpui','ypui')
+            index = ('vxui','vyui','vzui','xpui')
             ntmp = job.npui
         else:
-            index = ('vx','vy','vz','xp','yp')
+#            index = ('vx','vy','vz','xp','yp')
+            index = ('vx','vy','vz','xp')
             ntmp = job.np
         file = []
-        for i in range(5):
+        for i in range(4):
             f = fileinfo(job, time, index[i], mpi, proc)
             file.append(f)
         if mpi:
             ism, iem = mpiset(1, ntmp, job.mp, proc)
-            np = iem - ism + 1
+            self.np = iem - ism + 1
         else:
-            np = ntmp
-        self.vx = read1Ddata(file[0], endian, np)
-        self.vy = read1Ddata(file[1], endian, np)
-        self.vz = read1Ddata(file[2], endian, np)
-        self.xp = read1Ddata(file[3], endian, np)
-        self.yp = read1Ddata(file[4], endian, np)
+            self.np = ntmp
+        self.vx = read1Ddata(file[0], endian, self.np)
+        self.vy = read1Ddata(file[1], endian, self.np)
+        self.vz = read1Ddata(file[2], endian, self.np)
+        self.xp = read1Ddata(file[3], endian, self.np)
+#        self.yp = read1Ddata(file[4], endian, self.np)
         self.ke = 0.5*(self.vx**2+self.vy**2+self.vz**2)
         if pui:
             self.ke = job.mass * self.ke
 
+class ptl2D(ptl1D):
+    def __init__(self, job, time, mpi=False, proc=None, pui=False):
+        super().__init__(job,time,mpi,proc,pui)
+        if pui:
+            index = 'ypui'
+        else:
+            index= 'yp'
+        f = fileinfo(job, time, index, mpi, proc)
+        self.yp = read1Ddata(f, job.endian, self.np)
+            
 # function
 def header_endian(endian):
     if endian:
