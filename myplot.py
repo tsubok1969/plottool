@@ -103,6 +103,8 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
     for i in range(job.mp):
         dp = dh.ptl2D(job, time, mpi=True, proc=i, pui=pui)
         index = np.where( (dp.yp > rng1) & (dp.yp < rng2) )
+        if i%8==0:
+            print('Proc:' + str(i) + ' finished')
         if dp.xp[index].size == 0:
             continue
         if mx == 1:
@@ -133,8 +135,6 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
 
         htmp[impi] = np.histogram2d(x, y, bins=[xbins, ybins], range=[[xmin,xmax],[ymin,ymax]])
         impi += 1
-        if i%8==0:
-            print('Proc:' + str(i) + ' finished')
     X, Y, h = hist2d_mpi(htmp, impi)
     return (X, Y, h)
 
@@ -146,12 +146,12 @@ def makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,pui=True,endian=False):
     for i in range(job.mp):
         dp = dh.ptl2D(job,time,mpi=True,proc=i,pui=pui)
         index = np.where( (dp.yp >= ymin) & (dp.yp <= ymax) )
+        if i%8==0:
+            print('Proc:' + str(i) + ' complete')
         if dp.xp[index].size == 0:
             continue
         htmp[impi] = np.histogram2d(dp.xp[index],dp.ke[index],bins=[xbins,ybins],range=[[xmin,xmax], [emin,emax]])
         impi += 1
-        if i%8==0:
-            print('Proc:' + str(i) + ' complete')
     X, Y, ibex = hist2d_mpi(htmp, impi)
     return (X, Y, ibex)
 
