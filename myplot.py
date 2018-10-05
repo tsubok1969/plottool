@@ -47,6 +47,15 @@ def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
     plt.colorbar()
     putlabel(title, 'x', 'Energy')
 
+def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=False):
+    for i in range(ts,te):
+        index = i-ts
+        title = 'Time:%05.f'%(i)
+        pseudoIBEX(job,i,xbins,ybins,emin,emax,ymin,ymax,cmap,logscale,title)
+        fname = 'p%05.f'%(i) + '.png'
+        plt.savefig(fname)
+        
+    
 # utility
 def putlabel(title, xlabel, ylabel):
     plt.title(title)
