@@ -53,16 +53,16 @@ def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         index = ts+i
         title = 'Time: ' + str(index*job.tp)
         pseudoIBEX(job,index,xbins,ybins,emin,emax,ymin,ymax,cmap,logscale,title)
-        fname = 'p%05.f'%(index) + '.png'
+        fname = '~/tmp/figure/p%05.f'%(index) + '.png'
         print("Time:"+str(index))
         plt.savefig(fname)
 
-def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmap='jet',pui=True):
+def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
     tnum = te-ts+1
     for i in range(tnum):
         index = ts+i
         plt.clf()
-        df = dh.fld2d(job,index,pui=pui)
+        df = dh.fld2D(job,index,pui=pui)
         X, Y = np.meshgrid(df.x, df.y)
         title = 'Time: ' + str(index*job.tu)
         if iph==1:
@@ -79,12 +79,22 @@ def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmap='jet'
             z = df.pp
         elif iph==7:
             z = df.pl
+        elif iph==10:
+            z = df.npui
+        elif iph==11:
+            z = df.ppui
+        elif iph==12:
+            z = df.prui
 
         plt.pcolormesh(X, Y, z, cmap=cmap)
+        plt.colorbar()
+        plt.clim(cmin,cmax)
 
+        setlimit(xmin,xmax,ymin,ymax)
         putlabel(title,'x','y')
         print('Time: ' + str(index))
-
+        fname = '~/tmp/figure/f%05.f'%(index) + '.png'
+        plt.savefig(fname)
         
 # utility
 def putlabel(title, xlabel, ylabel):
