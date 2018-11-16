@@ -48,7 +48,8 @@ def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
     putlabel(title, 'x', 'Energy')
 
 def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=False):
-    for i in range(ts,te+1):
+    tnum = te-ts+1
+    for i in range(ts,tnum):
         index = i-ts
 #        title = 'Time:%05.f'%(i)
         title = 'Time: ' + str(i*job.tp)
@@ -58,7 +59,8 @@ def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         plt.savefig(fname)
 
 def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmap='jet',pui=True):
-    for i in range(ts, te+1):
+    tnum = te-ts+1
+    for i in range(ts, tnum):
         plt.clf()
         df = dh.fld2d(job,i,pui=pui)
         X, Y = np.meshgrid(df.x, df.y)
