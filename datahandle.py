@@ -71,7 +71,7 @@ class fld1D():
         self.pp = read1Ddata(file[7], endian, self.job.nx)
 
         bx = np.cos(np.deg2rad(job.th))
-        self.bf = 0.5*(bx**2 + self.by**2 + self.bz**2)
+        self.bf = np.sqrt(bx**2 + self.by**2 + self.bz**2)
         self.an = self.pp / self.pl
         self.th = np.rad2deg(np.arccos(bx/self.bf))
 
@@ -108,7 +108,7 @@ class fld2D():
         self.pp = read2Ddata(file[10], endian, self.job.nx, self.job.ny)
         self.pl = read2Ddata(file[11], endian, self.job.nx, self.job.ny)
 
-        self.bf = 0.5*(self.bx**2+self.by**2+self.bz**2)
+        self.bf = np.sqrt(self.bx**2+self.by**2+self.bz**2)
 
         self.x = np.linspace(0., self.job.dx*(self.job.nx-1), self.job.nx)
         self.y = np.linspace(0., self.job.dy*(self.job.ny-1), self.job.ny)
