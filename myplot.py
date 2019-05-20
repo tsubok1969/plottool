@@ -4,14 +4,20 @@ import matplotlib.colors as mc
 import datahandle as dh
 
 # plotting routine
-def mycontour(data, x, y, xmax=None, xmin=None, ymax=None, ymin=None, cmap='jet', title=None, xlabel=None, ylabel=None):
+def mycontour(data, x, y, xmax=None, xmin=None, ymax=None, ymin=None, cmap='jet', title=None, xlabel=None, ylabel=None, \
+              logscale=false):
     X, Y = np.meshgrid(x, y)
     plt.clf()
-    plt.pcolormesh(X, Y, data, cmap=cmap, rasterized=True)
+    if logscale:
+        norm = mc.LogNorm()
+    else:
+        norm = None
+    plt.pcolormesh(X, Y, data, cmap=cmap, norm=norm, rasterized=True)
 # plt.imshow(data[::-1], aspect='auto', extent=(min(x), max(x), min(y), max(y))    
     putlabel(title, xlabel, ylabel)
     setlimit(xmin, xmax, ymin, ymax)
     plt.colorbar()
+    plt.tight_layout()
 
 def sliceplt(x, data, cut, xmax=None, xmin=None, ymax=None, ymin=None, xcut=True, title=None, xlabel=None, ylabel=None):
     plt.clf()
@@ -22,6 +28,7 @@ def sliceplt(x, data, cut, xmax=None, xmin=None, ymax=None, ymin=None, xcut=True
     plt.plot(x, y)
     putlabel(title, xlabel, ylabel)
     setlimit(xmin, xmax, ymin, ymax)
+    plt.tight_layout()
 
 def ptl_hist2d(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, \
                    pui=False, cmap='jet',title=None,xlabel=None,ylabel=None, \
@@ -35,6 +42,7 @@ def ptl_hist2d(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, \
     plt.pcolormesh(X, Y, h, cmap=cmap, norm=norm, rasterized=True)
     plt.colorbar()
     putlabel(title, xlabel, ylabel)
+    plt.tight_layout()
 
 def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=False,title=None):
     X, Y, ibex = makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,endian=job.endian)
@@ -46,6 +54,7 @@ def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
     plt.pcolormesh(X, Y, ibex, cmap=cmap, norm=norm, rasterized=True)
     plt.colorbar()
     putlabel(title, 'x', 'Energy')
+    plt.tight_layout()
 
 def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=False):
     tnum = te-ts+1
@@ -53,8 +62,10 @@ def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         index = ts+i
         title = 'Time: ' + str(index*job.tp)
         pseudoIBEX(job,index,xbins,ybins,emin,emax,ymin,ymax,cmap,logscale,title)
-        fname = '~/tmp/figure/p%05.f'%(index) + '.png'
+#        fname = '~/tmp/figure/p%05.f'%(index) + '.png'
+        fname = './figure/p%05.f'%(index) + '.png'
         print("Time:"+str(index))
+        plt.tight_layout()
         plt.savefig(fname)
 
 def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
@@ -93,7 +104,9 @@ def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,
         setlimit(xmin,xmax,ymin,ymax)
         putlabel(title,'x','y')
         print('Time: ' + str(index))
-        fname = '~/tmp/figure/f%05.f'%(index) + '.png'
+        plt.tight_layout()
+#        fname = '~/tmp/figure/f%05.f'%(index) + '.png'
+        fname = './figure/f%05.f'%(index) + '.png'
         plt.savefig(fname)
         
 # utility
