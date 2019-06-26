@@ -70,34 +70,45 @@ def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         plt.tight_layout()
         plt.savefig(fname)
 
-def makeanime(job,ts,te,iph=1,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
+def makeanime(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
     tnum = te-ts+1
     for i in range(tnum):
         index = ts+i
         plt.clf()
         df = dh.fld2D(job,index,pui=pui)
         X, Y = np.meshgrid(df.x, df.y)
-        title = 'Time: ' + str(index*job.tu)
-        if iph==1:
+        if quant=='bx':
             z = df.bx
-        elif iph==2:
+            title_arg = 'Bx'
+        elif quant=='by':
             z = df.by
-        elif iph==3:
+            title_arg = 'By'
+        elif quant=='bz':
             z = df.bz
-        elif iph==4:
+            title_arg = 'Bz'
+        elif quant=='bf':
             z = df.bf
-        elif iph==5:
+            title_arg = '|B|'
+        elif quant=='np':
             z = df.np
-        elif iph==6:
+            title_arg = r'$N_p$'
+        elif quant=='pp':
             z = df.pp
-        elif iph==7:
+            title_arg = r'$P_\perp$'
+        elif quant=='pl':
             z = df.pl
-        elif iph==10:
+            title_arg = r'$P_\parallel$'
+        elif quant=='npui':
             z = df.npui
-        elif iph==11:
+            title_arg = r'$N_{PUI}$'
+        elif quant=='ppui':
             z = df.ppui
-        elif iph==12:
+            title_arg = r'$P_{\perp, PUI}$'
+        elif quant=='prui':
             z = df.prui
+            title_arg = r'$P_{\parallel, PUI}$'
+
+        title = title_arg + ' at Time: ' + str(index*job.tu)
 
         plt.pcolormesh(X, Y, z, cmap=cmap)
         plt.colorbar()
