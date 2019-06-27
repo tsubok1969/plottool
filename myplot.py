@@ -137,30 +137,30 @@ def make_ptl_hist2d_whole(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, yma
     htmp = {}
     for i in range(job.mp):
         dp = dh.ptl2D(job, time, mpi=True, proc=i, pui=pui)
-        if mx == 1:
+        if mx == 'xp':
             x = dp.xp
-        elif mx == 2:
+        elif mx == 'yp':
             x = dp.yp
-        elif mx == 3:
+        elif mx == 'vx':
             x = dp.vx
-        elif mx == 4:
+        elif mx == 'vy':
             x = dp.vy
-        elif mx == 5:
+        elif mx == 'vz':
             x = dp.vz
-        elif mx == 6:
+        elif mx == 'ke':
             x = dp.ke
 
-        if my == 1:
+        if my == 'xp':
             y = dp.xp
-        elif my == 2:
+        elif my == 'yp':
             y = dp.yp
-        elif my == 3:
+        elif my == 'vx':
             y = dp.vx
-        elif my == 4:
+        elif my == 'vy':
             y = dp.vy
-        elif my == 5:
+        elif my == 'vz':
             y = dp.vz
-        elif my == 6:
+        elif my == 'ke':
             y = dp.ke
 
         htmp[i] = np.histogram2d(x, y, bins=[xbins, ybins], range=[[xmin,xmax],[ymin,ymax]])
@@ -190,9 +190,9 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
             print('Proc:' + str(i) + ' finished')
         if dp.xp[index].size == 0:
             continue
-        if mx == 'x':
+        if mx == 'xp':
             x = dp.xp[index]
-        elif mx == 'y':
+        elif mx == 'yp':
             x = dp.yp[index]
         elif mx == 'vx':
             x = dp.vx[index]
@@ -203,9 +203,9 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
         elif mx == 'ke':
             x = dp.ke[index]
 
-        if my == 'x':
+        if my == 'xp':
             y = dp.xp[index]
-        elif my == 'y':
+        elif my == 'yp':
             y = dp.yp[index]
         elif my == 'vx':
             y = dp.vx[index]
