@@ -70,7 +70,7 @@ def multiIBEX(job,ts,te,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=Fals
         plt.tight_layout()
         plt.savefig(fname)
 
-def makeanime(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
+def makeanime2D(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,cmax=None,cmap='jet',pui=True):
     tnum = te-ts+1
     for i in range(tnum):
         index = ts+i
@@ -118,7 +118,6 @@ def makeanime(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=None,
         putlabel(title,'x','y')
         print('Time: ' + str(index))
         plt.tight_layout()
-#        fname = '~/tmp/figure/f%05.f'%(index) + '.png'
         fname = './figure/f%05.f'%(index) + '.png'
         plt.savefig(fname)
         
@@ -185,7 +184,7 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
         if sampling_ymax==None:
             sampling_ymax = np.max(dp.yp)
         index = np.where( (dp.yp >= sampling_ymin) & (dp.yp <= sampling_ymax) & (dp.xp >= sampling_xmin) & (dp.xp <= sampling_xmax) )
-#        index = np.where( (dp.yp >= yrng1) & (dp.yp <= yrng2) & (dp.xp >= sampling_xmin) & (dp.xp <= sampling_xmax) )
+
         if i%8==0:
             print('Proc:' + str(i) + ' finished')
         if dp.xp[index].size == 0:
@@ -221,6 +220,53 @@ def make_ptl_hist2d_partial(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, y
     X, Y, h = hist2d_mpi(htmp, impi)
     return (X, Y, h)
 
+def make_ptl_hist1d(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, \
+                    sampling_xmin=None, sampling_xmax=None, endian = False, pui=False):
+    htmp = {}
+    impi = 0
+    for i in range(job.mp):
+        dp = dh.ptl1D(job, time, mpi=True, proc=i, pui=pui)
+        if sampling_xmin==None:
+            sampling_xmin = np.min(dp.xp)
+        if sampling_xmax==None:
+            sampling_xmax = np.max(dp.xp)
+        index = np.where( (dp.xp >= sampling_xmin) & (dp.xp <= sampling_xmax) )
+
+        if i%8==0:
+            print('Proc:' + str(i) + ' finished')
+        if dp.xp[index].size == 0:
+            continue
+
+        if mx == 'xp':
+            x = dp.xp[index]
+        elif mx == 'vx':
+            x = dp.vx[index]
+        elif mx == 'vy':
+            x = dp.vy[index]
+        elif mx == 'vz':
+            x = dp.vz[index]
+        elif mx == 'ke':
+            x = dp.ke[index]
+
+        if my == 'xp':
+            y = dp.xp[index]
+        elif my == 'vx':
+            y = dp.vx[index]
+        elif my == 'vy':
+            y = dp.vy[index]
+        elif my == 'vz':
+            y = dp.vz[index]
+        elif my == 'ke':
+            y = dp.ke[index]
+
+        htmp[impi] = np.histogram2d(x, y, bins=[xbins, ybins], range=[[xmin,xmax],[ymin,ymax]])
+        impi += 1
+
+    if impi==0:
+        print("there are no data in the sampling box")
+    X, Y, h = hist2d_mpi(htmp, impi)
+    return (X, Y, h)
+
 def makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,pui=True,endian=False):
     xmin = 0.0
     xmax = job.nx*job.dx
@@ -246,6 +292,11 @@ def hist2d_mpi(h, mp):
     return (X, Y, hretn.T)
 
 def distfunc(job, time, quantity, ndiv, rmin, rmax, sampling_ymin, sampling_ymax, hlog=False, pui=False):
+    ## making the distribution of the particle velocity or energy
+# quantity: assigned by the quantity index, e.g., 'vx', 'xp', 'ke', etc
+    # ndiv: dividing number for the histogram
+    # rmin, rmax: minimum and maximum ranges of the histogram
+    # hlog: the range to be divided by the logarithmic scale
     numproc = 0
     dtmp = {}
     impi = 0
