@@ -1,5 +1,8 @@
 import numpy as np
 
+#####################################################################
+##########              INITIALIZATION PART                ##########
+#####################################################################
 #class
 class job1d:
     def __init__(self,jobid,mpi=False,pui=False,endian=False,old_format=False):
@@ -51,6 +54,9 @@ class job2d:
             self.npui = int(info[0])
             self.mass = float(info[1])
 
+##########################################****###########################
+##########              BASIC MANIPULATION PART                ##########
+##############################################****#######################
 class fld1D():
     def __init__(self, job, time, pui=False):
         self.job = job
@@ -163,7 +169,9 @@ class ptl2D(ptl1D):
         f = fileinfo(job, time, index, mpi, proc)
         self.yp = read1Ddata(f, job.endian, self.np, self.job.form)
             
-# function
+##########################
+###### File handling #####
+##########################
 def header_endian(endian):
     if endian:
         header = "../DATA/FX/"
@@ -231,3 +239,196 @@ def mpiset(is0, ie0, iproc, irank):
     if iwork2 > irank:
         iem = iem + 1
     return (ism, iem)
+
+#####################################################################
+##########           ADVANCED DATA MAKING PART             ##########
+#####################################################################
+def make_ptl_hist(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, dim=1, \
+                  sampling_ymin=None, sampling_ymax=None, sampling_xmin=None, sampling_xmax=None, pui=False):
+    htmp = {}
+    impi = 0
+    for i in range(job.mp):
+        if dim==2:
+            dp = ptl2D(job, time, mpi=True, proc=i, pui=pui)
+            if sampling_xmin==None:
+                sampling_xmin = np.min(dp.xp)
+            if sampling_xmax==None:
+                sampling_xmax = np.max(dp.xp)
+            if sampling_ymin==None:
+                sampling_ymin = np.min(dp.yp)
+            if sampling_ymax==None:
+                sampling_ymax = np.max(dp.yp)
+            index = np.where( (dp.yp >= sampling_ymin) & (dp.yp <= sampling_ymax) & \
+                              (dp.xp >= sampling_xmin) & (dp.xp <= sampling_xmax) )
+        elif dim==1:
+            dp = ptl1D(job, time, mpi=True, proc=i, pui=pui)
+            if sampling_xmin==None:
+                sampling_xmin = np.min(dp.xp)
+            if sampling_xmax==None:
+                sampling_xmax = np.max(dp.xp)
+            index = np.where( (dp.xp >= sampling_xmin) & (dp.xp <= sampling_xmax) )
+
+        if i%8==0:
+            print('Proc:' + str(i) + ' finished')
+        if dp.xp[index].size == 0:
+            continue
+        if mx == 'xp':
+            x = dp.xp[index]
+        elif mx == 'yp':
+            x = dp.yp[index]
+        elif mx == 'vx':
+            x = dp.vx[index]
+        elif mx == 'vy':
+            x = dp.vy[index]
+        elif mx == 'vz':
+            x = dp.vz[index]
+        elif mx == 'ke':
+            x = dp.ke[index]
+
+        if my == 'xp':
+            y = dp.xp[index]
+        elif my == 'yp':
+            y = dp.yp[index]
+        elif my == 'vx':
+            y = dp.vx[index]
+        elif my == 'vy':
+            y = dp.vy[index]
+        elif my == 'vz':
+            y = dp.vz[index]
+        elif my == 'ke':
+            y = dp.ke[index]
+
+        htmp[impi] = np.histogram2d(x, y, bins=[xbins, ybins], range=[[xmin,xmax],[ymin,ymax]])
+        impi += 1
+    X, Y, h = hist2d_mpi(htmp, impi)
+    return (X, Y, h)
+
+def makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,pui=True):
+    xmin = 0.0
+    xmax = job.nx*job.dx
+    htmp = {}
+    impi = 0
+    for i in range(job.mp):
+        dp = ptl2D(job,time,mpi=True,proc=i,pui=pui)
+        index = np.where( (dp.yp >= ymin) & (dp.yp <= ymax) )
+        if i%8==0:
+            print('Proc:' + str(i) + ' complete')
+        if dp.xp[index].size == 0:
+            continue
+        htmp[impi] = np.histogram2d(dp.xp[index],dp.ke[index],bins=[xbins,ybins],range=[[xmin,xmax], [emin,emax]])
+        impi += 1
+    X, Y, ibex = hist2d_mpi(htmp, impi)
+    return (X, Y, ibex)
+
+def hist2d_mpi(h, mp):
+    hretn = h[0][0]
+    for i in range(mp-1):
+        hretn += h[i+1][0]
+    X, Y = np.meshgrid(h[0][1], h[0][2])
+    return (X, Y, hretn.T)
+
+def distfunc(job, time, quantity, ndiv, rmin, rmax, dim=1, \
+             sampling_xmin=None, sampling_xmax=None, sampling_ymin=None, sampling_ymax=None, \
+             hlog=False, pui=False):
+    ## making the distribution of the particle velocity or energy
+    # quantity: assigned by the quantity index, e.g., 'vx', 'xp', 'ke', etc
+    # ndiv: dividing number for the histogram
+    # rmin, rmax: minimum and maximum ranges of the histogram
+    # hlog: the range to be divided by the logarithmic scale
+    numproc = 0
+    dtmp = {}
+    impi = 0
+    x = np.arange(ndiv+1,dtype=np.float64)
+    if hlog:
+        i1 = np.log10(rmin)
+        i2 = np.log10(rmax)
+        x = 10.**(i1 + x*(i2-i1)/ndiv)
+    else:
+        i1 = rmin
+        i2 = rmax
+        x = x*(i2-i1)/ndiv + i1
+
+    for i in range(job.mp):
+        if dim==2:
+            dp = ptl2D(job, time, mpi=True, proc=i, pui=pui)
+            if sampling_ymin == None:
+                sampling_ymin = np.min(dp.yp)
+            if sampling_ymax == None:
+                sampling_ymax = np.max(dp.yp)
+            if sampling_xmin == None:
+                sampling_xmin = np.min(dp.xp)
+            if sampling_xmax == None:
+                sampling_xmax = np.max(dp.xp)
+            index = np.where( (dp.yp > sampling_ymin) & (dp.yp < sampling_ymax) & \
+                              (dp.xp > sampling_xmin) & (dp.xp < sampling_xmax) )
+        elif dim==1:
+            dp = ptl1D(job, time, mpi=True, proc=i, pui=pui)
+            if sampling_xmin == None:
+                sampling_xmin = np.min(dp.xp)
+            if sampling_xmax == None:
+                sampling_xmax = np.max(dp.xp)
+            index = np.where( (dp.xp > sampling_xmin) & (dp.xp < sampling_xmax)  )
+
+        if i%8 == 0:
+            print('Proc:' + str(i) + ' finished')
+        if dp.xp[index].size == 0:
+            continue
+        
+        if quantity == 'vx':
+            v = dp.vx[index]
+        elif quantity == 'vy':
+            v = dp.vy[index]
+        elif quantity == 'vz':
+            v = dp.vz[index]
+        elif quantity == 'v':
+            v = np.sqrt(dp.vx[index]**2 + dp.vy[index]**2 + dp.vz[index]**2)
+        else:
+            v = dp.ke[index]
+
+        if hlog:
+            v = np.log10(v)
+
+        dtmp[impi] = np.histogram(v, bins=ndiv, range=[i1, i2])
+        impi += 1
+        numproc += v.size
+
+    cum_dtmp = dtmp[0][0]
+    for i in range(impi-1):
+        cum_dtmp += dtmp[i+1][0]
+    print(float(numproc))
+    return(x[0:ndiv], cum_dtmp.astype(np.float64)/numproc)
+
+def datastack(job, index, xskip=None, tstart=None, tend=None, tskip=None, pui=False):
+    #### making stacked data from 1d simulation result ###
+    if xskip == None:
+        xskip = 1
+    if tstart == None:
+        tstart = 0
+    if tend == None:
+        tend = job.ns - 1
+    if tskip == None:
+        tskip = 1
+
+    ds = np.array([])
+    tm = np.array([])
+    for i in range(tstart, tend, tskip):
+        df = fld1D(job, i, pui)
+
+        if index == 'bf':
+            dat = df.bf[0:job.nx:xskip]
+        elif index == 'np':
+            dat = df.np[0:job.nx:xskip]
+        elif index == 'npui':
+            dat = df.npui[0:job.nx:xskip]
+
+        ds = np.hstack((ds, dat))
+        tm = np.hstack((tm, df.time))
+
+    xg = df.x[0:job.nx:xskip]
+
+    X, Y = np.meshgrid(xg, tm)
+    xsize = xg.shape[0]
+    tsize = tm.shape[0]
+    ds = ds.reshape(tsize,xsize)
+
+    return (X, Y, ds)
