@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mc
-import datahandle as dh
 
 # plotting routine
 def mycontour(data, x, y, xmax=None, xmin=None, ymax=None, ymin=None, cmin=None, cmax=None, cmap='jet', \
@@ -35,7 +34,7 @@ def sliceplt(x, data, cut, xmax=None, xmin=None, ymax=None, ymin=None, xcut=True
 def ptl_hist2d_plot(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, dim=1, \
                     pui=False, cmap='jet',title=None,xlabel=None,ylabel=None, cmin=None, cmax=None, \
                     logscale=False):
-    X, Y, h = dh.make_ptl_hist(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, dim=dim, pui=pui)
+    X, Y, h = job.make_ptl_hist(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, dim=dim, pui=pui)
     plt.clf()
     if logscale:
         norm = mc.LogNorm()
@@ -48,7 +47,7 @@ def ptl_hist2d_plot(job, time, mx, my, xbins, ybins, xmin, xmax, ymin, ymax, dim
     plt.tight_layout()
 
 def pseudoIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax,cmap='jet',logscale=False,title=None,cmin=None,cmax=None):
-    X, Y, ibex = dh.makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax)
+    X, Y, ibex = job.makeIBEX(job,time,xbins,ybins,emin,emax,ymin,ymax)
     plt.clf()
     if logscale:
         norm = mc.LogNorm()
@@ -77,38 +76,10 @@ def makeanime2D(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=Non
     for i in range(tnum):
         index = ts+i
         plt.clf()
-        df = dh.fld2D(job,index,pui=pui)
+        df = job.fld2D(job,index,pui=pui)
         X, Y = np.meshgrid(df.x, df.y)
-        if quant=='bx':
-            z = df.bx
-            title_arg = 'Bx'
-        elif quant=='by':
-            z = df.by
-            title_arg = 'By'
-        elif quant=='bz':
-            z = df.bz
-            title_arg = 'Bz'
-        elif quant=='bf':
-            z = df.bf
-            title_arg = '|B|'
-        elif quant=='np':
-            z = df.np
-            title_arg = r'$N_p$'
-        elif quant=='pp':
-            z = df.pp
-            title_arg = r'$P_\perp$'
-        elif quant=='pl':
-            z = df.pl
-            title_arg = r'$P_\parallel$'
-        elif quant=='npui':
-            z = df.npui
-            title_arg = r'$N_{PUI}$'
-        elif quant=='ppui':
-            z = df.ppui
-            title_arg = r'$P_{\perp, PUI}$'
-        elif quant=='prui':
-            z = df.prui
-            title_arg = r'$P_{\parallel, PUI}$'
+
+        z, title_arg = (df, quant)
 
         title = title_arg + ' at Time: ' + str(index*job.tu)
 
@@ -123,16 +94,17 @@ def makeanime2D(job,ts,te,quant,xmin=None,xmax=None,ymin=None,ymax=None,cmin=Non
         fname = './figure/f%05.f'%(index) + '.png'
         plt.savefig(fname)
 
-def mylineplot(x, y, lw=.5, cls=False, label=None, ls='solid', col=None):
+def mylineplot(x, y, lw=.5, cls=False, label=None, ls='solid', col=None, xmin=None, xmax=None):
     if cls:
         plt.clf()
     plt.plot(x, y, lw=lw, label=label, linestyle=ls, color=col)
+    plt.xlim(xmin, xmax)
         
 # utility
 def putlabel(title, xlabel, ylabel):
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.title(title, fontsize=18)
+    plt.xlabel(xlabel, fontsize=18)
+    plt.ylabel(ylabel, fontsize=18)
 def setlimit(xmin, xmax, ymin, ymax):
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
